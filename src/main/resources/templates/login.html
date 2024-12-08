@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Iniciar Sesión</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header text-center">
+              <h2>Iniciar Sesión</h2>
+            </div>
+            <div class="card-body">
+              <!-- Formulario de inicio de sesión -->
+              <form id="loginForm">
+                <!-- Mensaje de error -->
+                <div
+                  id="errorMessage"
+                  class="alert alert-danger d-none"
+                  role="alert"
+                >
+                  Usuario o contraseña incorrectos.
+                </div>
+                <div class="form-group">
+                  <label for="correo">Correo Electrónico:</label>
+                  <input
+                    type="email"
+                    id="correo"
+                    class="form-control"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="contrasena">Contraseña:</label>
+                  <input
+                    type="password"
+                    id="contrasena"
+                    class="form-control"
+                    required
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                  Ingresar
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const correo = document.getElementById("correo").value;
+          const contrasena = document.getElementById("contrasena").value;
+
+          try {
+            const response = await fetch(
+              "http://localhost:8080/usuarios/login",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ correo, contrasena }),
+              }
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              localStorage.setItem("jwtToken", data.res); // Almacenar el token JWT
+              window.location.href = "/inicio"; // Redirigir al inicio
+            } else {
+              document
+                .getElementById("errorMessage")
+                .classList.remove("d-none"); // Mostrar mensaje de error
+            }
+          } catch (error) {
+            console.error("Error al iniciar sesión:", error);
+            document.getElementById("errorMessage").classList.remove("d-none"); // Mostrar mensaje de error
+          }
+        });
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>

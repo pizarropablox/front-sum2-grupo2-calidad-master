@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Página de Inicio - Recetas Populares</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Fragmento de navegación -->
+    <th:block th:include="fragments/nav"></th:block>
+
+    <!-- Contenedor principal -->
+    <div class="container mt-5">
+      <header class="text-center mb-5">
+        <h1>Recetas Populares</h1>
+        <p>Explora las recetas más populares seleccionadas para ti.</p>
+      </header>
+
+      <!-- Contenedor donde se mostrarán las recetas -->
+      <div class="row" id="recetasPopularesContainer">
+        <!-- Recetas dinámicas insertadas aquí -->
+      </div>
+    </div>
+
+    <!-- Script para realizar el llamado al servicio -->
+    <script>
+      async function cargarRecetasPopulares() {
+        try {
+          // Realizar el llamado al servicio
+          const response = await fetch("http://localhost:8080/recetas");
+          const data = await response.json();
+
+          if (data.state === "success") {
+            console.log({ data: data.res });
+            const recetas = data.res.filter((obj) =>
+              [1, 2, 5].includes(obj.id)
+            );
+            let contenidoHTML = "";
+
+            // Generar dinámicamente las tarjetas de recetas
+            recetas.forEach((receta) => {
+              contenidoHTML += `
+                <div class="col-md-4 mb-4">
+                  <div class="card">
+                    <img src="${
+                      receta.imagenUrl
+                    }" class="card-img-top" alt="Imagen de receta" />
+                    <div class="card-body">
+                      <h5 class="card-title">${receta.nombre}</h5>
+                      <p class="card-text">${receta.instrucciones.substring(
+                        0,
+                        100
+                      )}...</p>
+                      <p><strong>Dificultad:</strong> ${receta.dificultad}</p>
+                      <p><strong>Tiempo:</strong> ${
+                        receta.tiempoCoccion
+                      } minutos</p>
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+
+            // Insertar las recetas en el contenedor
+            document.getElementById("recetasPopularesContainer").innerHTML =
+              contenidoHTML;
+          } else {
+            console.error("Error al obtener recetas:", data.error);
+            document.getElementById("recetasPopularesContainer").innerHTML =
+              "<p>No se pudieron cargar las recetas.</p>";
+          }
+        } catch (error) {
+          console.error("Error al realizar el llamado:", error);
+          document.getElementById("recetasPopularesContainer").innerHTML =
+            "<p>Hubo un problema al cargar las recetas.</p>";
+        }
+      }
+
+      // Llamar a la función al cargar la página
+      cargarRecetasPopulares();
+    </script>
+  </body>
+</html>

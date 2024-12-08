@@ -1,0 +1,98 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="/">Recetas</a>
+  <button
+    class="navbar-toggler"
+    type="button"
+    data-toggle="collapse"
+    data-target="#navbarNav"
+    aria-controls="navbarNav"
+    aria-expanded="false"
+    aria-label="Toggle navigation"
+  >
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="/inicio">Inicio</a>
+      </li>
+      <li class="nav-item d-none" id="publicarLink">
+        <a class="nav-link" href="/publicar">Publicar receta</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/buscar">Buscar Recetas</a>
+      </li>
+      <li class="nav-item d-none" id="adminLink">
+        <a class="nav-link" href="/admin">Administrar</a>
+      </li>
+      <li class="nav-item" id="loginLink">
+        <a class="nav-link" href="/login">Iniciar Sesión</a>
+      </li>
+      <li class="nav-item d-none" id="logoutLink">
+        <a class="nav-link" href="#" onclick="logout()">Cerrar Sesión</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<script>
+  async function checkAuthentication() {
+    const token = localStorage.getItem("jwtToken");
+    const loginLink = document.getElementById("loginLink");
+    const logoutLink = document.getElementById("logoutLink");
+    const publicarLink = document.getElementById("publicarLink");
+    const adminLink = document.getElementById("adminLink");
+
+    if (!token) {
+      // Si no hay token, mostrar "Iniciar Sesión" y ocultar otros enlaces
+      loginLink.classList.remove("d-none");
+      logoutLink.classList.add("d-none");
+      publicarLink.classList.add("d-none");
+      adminLink.classList.add("d-none");
+      return;
+    }
+
+    try {
+      // Validar token y obtener rol
+      const response = await fetch("http://localhost:8080/usuarios/rol", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error("Token inválido");
+      }
+
+      const data = await response.json();
+
+      if (data.state === "success") {
+        // Usuario autenticado
+        loginLink.classList.add("d-none");
+        logoutLink.classList.remove("d-none");
+        publicarLink.classList.remove("d-none");
+
+        // Mostrar enlace de administración solo si el rol es admin
+        if (data.res === "admin") {
+          adminLink.classList.remove("d-none");
+        }
+      } else {
+        throw new Error("Validación fallida");
+      }
+    } catch (error) {
+      console.error("Error al validar el token:", error.message);
+      logout(); // Cerrar sesión si el token no es válido
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem("jwtToken");
+    alert("Sesión cerrada con éxito.");
+    window.location.href = "/login";
+  }
+
+  // Ejecutar la verificación de autenticación al cargar la página
+  document.addEventListener("DOMContentLoaded", checkAuthentication);
+</script>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>

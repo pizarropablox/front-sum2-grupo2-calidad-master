@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Publicar Receta</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Publicar Receta</h1>
+      <p>Llena el formulario para publicar una nueva receta.</p>
+
+      <!-- Formulario para publicar receta -->
+      <form id="recetaForm">
+        <div class="form-group">
+          <label for="nombre">Nombre de la receta</label>
+          <input
+            type="text"
+            class="form-control"
+            id="nombre"
+            placeholder="Nombre de la receta"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="tipoCocina">Tipo de Cocina</label>
+          <input
+            type="text"
+            class="form-control"
+            id="tipoCocina"
+            placeholder="Ej: Mexicana, Italiana, etc."
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="ingredientes">Ingredientes</label>
+          <textarea
+            class="form-control"
+            id="ingredientes"
+            rows="3"
+            placeholder="Lista de ingredientes separados por comas"
+            required
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label for="paisOrigen">País de Origen</label>
+          <input
+            type="text"
+            class="form-control"
+            id="paisOrigen"
+            placeholder="Ej: México, Italia, etc."
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="dificultad">Dificultad</label>
+          <select class="form-control" id="dificultad" required>
+            <option value="">Seleccione una opción</option>
+            <option value="Fácil">Fácil</option>
+            <option value="Intermedia">Intermedia</option>
+            <option value="Difícil">Difícil</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="tiempoCoccion">Tiempo de Cocción (minutos)</label>
+          <input
+            type="number"
+            class="form-control"
+            id="tiempoCoccion"
+            placeholder="Ej: 30, 60, etc."
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="instrucciones">Instrucciones</label>
+          <textarea
+            class="form-control"
+            id="instrucciones"
+            rows="5"
+            placeholder="Describe los pasos a seguir"
+            required
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label for="imagenUrl">URL de la Imagen</label>
+          <input
+            type="url"
+            class="form-control"
+            id="imagenUrl"
+            placeholder="http://example.com/imagen.jpg"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="videoUrl">URL del Video</label>
+          <input
+            type="url"
+            class="form-control"
+            id="videoUrl"
+            placeholder="http://youtube.com/video"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-primary">Publicar Receta</button>
+      </form>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      async function validarToken() {
+        const token = localStorage.getItem("jwtToken");
+        if (!token) {
+          window.location.href = "/403";
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            "http://localhost:8080/usuarios/validar-token",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          const data = await response.json();
+          if (data.state !== "success") {
+            window.location.href = "/403";
+          }
+        } catch (error) {
+          console.error("Error al validar el token:", error.message);
+          window.location.href = "/403";
+        }
+      }
+
+      document
+        .getElementById("recetaForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const token = localStorage.getItem("jwtToken");
+          if (!token) {
+            alert("Debes iniciar sesión para publicar una receta.");
+            return;
+          }
+
+          // Obtener los valores del formulario
+          const receta = {
+            nombre: document.getElementById("nombre").value,
+            tipoCocina: document.getElementById("tipoCocina").value,
+            ingredientes: document.getElementById("ingredientes").value,
+            paisOrigen: document.getElementById("paisOrigen").value,
+            dificultad: document.getElementById("dificultad").value,
+            tiempoCoccion: document.getElementById("tiempoCoccion").value,
+            instrucciones: document.getElementById("instrucciones").value,
+            imagenUrl: document.getElementById("imagenUrl").value,
+            videoUrl: document.getElementById("videoUrl").value,
+          };
+
+          try {
+            // Enviar receta al backend
+            const response = await fetch(
+              "http://localhost:8080/recetas/publicar",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(receta),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("No se pudo publicar la receta.");
+            }
+
+            alert("Receta publicada con éxito.");
+            window.location.href = "/"; // Redirige a la página de inicio
+          } catch (error) {
+            console.error("Error al publicar receta:", error.message);
+            alert("Hubo un error al publicar la receta. Intenta nuevamente.");
+          }
+        });
+
+      // Validar token antes de cargar la página
+      validarToken();
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>

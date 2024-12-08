@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Buscar Recetas</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <header class="text-center mb-5">
+        <h1>Buscar Recetas</h1>
+        <p>Utiliza el formulario para buscar recetas específicas.</p>
+      </header>
+
+      <!-- Formulario de Búsqueda de Recetas -->
+      <form id="searchForm" class="form-inline justify-content-center">
+        <div class="form-group mx-2">
+          <input
+            type="text"
+            id="nombre"
+            name="nombre"
+            class="form-control"
+            placeholder="Nombre de la receta"
+          />
+        </div>
+        <div class="form-group mx-2">
+          <input
+            type="text"
+            id="tipoCocina"
+            name="tipoCocina"
+            class="form-control"
+            placeholder="Tipo de Cocina"
+          />
+        </div>
+        <div class="form-group mx-2">
+          <input
+            type="text"
+            id="dificultad"
+            name="dificultad"
+            class="form-control"
+            placeholder="Dificultad"
+          />
+        </div>
+        <div class="form-group mx-2">
+          <input
+            type="text"
+            id="paisOrigen"
+            name="paisOrigen"
+            class="form-control"
+            placeholder="País de Origen"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary mx-2">Buscar</button>
+      </form>
+
+      <!-- Contenedor de Resultados -->
+      <div id="resultados" class="mt-4">
+        <h3 id="resultadosTitulo" class="d-none">Resultados de Búsqueda</h3>
+        <div class="alert alert-warning d-none" id="noResultados">
+          No se encontraron recetas.
+        </div>
+        <div class="row" id="resultadosContainer">
+          <!-- Los resultados se insertarán aquí -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Script para realizar el llamado al servicio -->
+    <script>
+      document
+        .getElementById("searchForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const nombre = document.getElementById("nombre").value;
+          const tipoCocina = document.getElementById("tipoCocina").value;
+          const dificultad = document.getElementById("dificultad").value;
+          const paisOrigen = document.getElementById("paisOrigen").value;
+
+          // Construir queryParams dinámicamente
+          const queryParams = new URLSearchParams();
+          if (nombre) queryParams.append("nombre", nombre);
+          if (tipoCocina) queryParams.append("tipoCocina", tipoCocina);
+          if (dificultad) queryParams.append("dificultad", dificultad);
+          if (paisOrigen) queryParams.append("paisOrigen", paisOrigen);
+
+          const response = await fetch(
+            `http://localhost:8080/recetas/buscar?${queryParams.toString()}`
+          );
+          const data = await response.json();
+
+          const resultadosContainer = document.getElementById(
+            "resultadosContainer"
+          );
+          const resultadosTitulo = document.getElementById("resultadosTitulo");
+          const noResultados = document.getElementById("noResultados");
+
+          // Limpiar contenedor de resultados
+          resultadosContainer.innerHTML = "";
+
+          if (data.state === "success" && data.res.length > 0) {
+            resultadosTitulo.classList.remove("d-none");
+            noResultados.classList.add("d-none");
+
+            // Generar HTML para cada receta
+            data.res.forEach((receta) => {
+              const recetaHTML = `
+                <div class="col-md-4 mb-4">
+                  <div class="card">
+                    <img src="${
+                      receta.imagenUrl
+                    }" class="card-img-top" alt="Imagen de receta"/>
+                    <div class="card-body">
+                      <h5 class="card-title">${receta.nombre}</h5>
+                      <p class="card-text">${receta.instrucciones.substring(
+                        0,
+                        100
+                      )}...</p>
+                      <p><strong>Tipo de Cocina:</strong> ${
+                        receta.tipoCocina
+                      }</p>
+                      <p><strong>Dificultad:</strong> ${receta.dificultad}</p>
+                      <p><strong>País:</strong> ${receta.paisOrigen}</p>
+                      <a href="/receta/${
+                        receta.id
+                      }" class="btn btn-info">Ver más</a>
+                    </div>
+                  </div>
+                </div>
+              `;
+              resultadosContainer.insertAdjacentHTML("beforeend", recetaHTML);
+            });
+          } else {
+            resultadosTitulo.classList.add("d-none");
+            noResultados.classList.remove("d-none");
+          }
+        });
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>

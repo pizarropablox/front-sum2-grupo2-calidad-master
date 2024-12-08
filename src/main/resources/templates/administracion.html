@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Administración</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <th:block th:include="fragments/nav"></th:block>
+    <div class="container mt-5">
+      <h1>Administración</h1>
+
+      <!-- Tabla de Usuarios -->
+      <h3 class="mt-4">Usuarios</h3>
+      <table class="table table-bordered" id="tablaUsuarios">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <!-- Tabla de Comentarios -->
+      <h3 class="mt-4">Comentarios</h3>
+      <table class="table table-bordered" id="tablaComentarios">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Contenido</th>
+            <th>Usuario</th>
+            <th>Receta</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <script>
+      async function validarTokenYRol() {
+        const token = localStorage.getItem("jwtToken");
+        if (!token) {
+          window.location.href = "/403";
+          return;
+        }
+
+        try {
+          const response = await fetch("http://localhost:8080/usuarios/rol", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          const data = await response.json();
+          if (data.state !== "success" || data.res !== "admin") {
+            window.location.href = "/403";
+          } else {
+            cargarDatos();
+          }
+        } catch (error) {
+          console.error("Error al validar el token y rol:", error.message);
+          window.location.href = "/403";
+        }
+      }
+
+      async function cargarDatos() {
+        try {
+          const token = localStorage.getItem("jwtToken");
+
+          // Cargar usuarios
+          const usuariosResponse = await fetch(
+            "http://localhost:8080/usuarios",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          const usuarios = await usuariosResponse.json();
+          const usuariosTBody = document
+            .getElementById("tablaUsuarios")
+            .querySelector("tbody");
+          usuariosTBody.innerHTML = usuarios
+            .map(
+              (usuario) =>
+                `<tr>
+                  <td>${usuario.id}</td>
+                  <td>${usuario.nombre} ${usuario.apellido}</td>
+                  <td>${usuario.correo}</td>
+                  <td>${usuario.rol}</td>
+                  <td>
+                    <button class="btn btn-warning btn-sm" onclick="editarRol(${usuario.id}, '${usuario.rol}')">Editar Rol</button>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarUsuario(${usuario.id})">Eliminar</button>
+                  </td>
+                </tr>`
+            )
+            .join("");
+
+          // Cargar comentarios
+          const comentariosResponse = await fetch(
+            "http://localhost:8080/recetas/comentarios",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          const comentariosData = await comentariosResponse.json();
+          const comentarios = comentariosData.res;
+          const comentariosTBody = document
+            .getElementById("tablaComentarios")
+            .querySelector("tbody");
+          comentariosTBody.innerHTML = comentarios
+            .map(
+              (comentario) =>
+                `<tr>
+                  <td>${comentario.id}</td>
+                  <td>${comentario.contenido}</td>
+                  <td>${comentario.nombreUsuario} ${comentario.apellidoUsuario}</td>
+                  <td>${comentario.nombreReceta}</td>
+                  <td>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarComentario(${comentario.id})">Eliminar</button>
+                  </td>
+                </tr>`
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error al cargar datos:", error.message);
+        }
+      }
+
+      async function editarRol(idUsuario, rolActual) {
+        const nuevoRol = prompt(
+          "Ingrese el nuevo rol (admin/cliente):",
+          rolActual
+        );
+        if (!nuevoRol || (nuevoRol !== "admin" && nuevoRol !== "cliente")) {
+          alert("Rol inválido");
+          return;
+        }
+
+        try {
+          const token = localStorage.getItem("jwtToken");
+          await fetch(
+            `http://localhost:8080/usuarios/${idUsuario}/rol?nuevoRol=${nuevoRol}`,
+            {
+              method: "PUT",
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          alert("Rol actualizado con éxito");
+          cargarDatos();
+        } catch (error) {
+          console.error("Error al actualizar rol:", error.message);
+        }
+      }
+
+      async function eliminarUsuario(idUsuario) {
+        if (!confirm("¿Estás seguro de eliminar este usuario?")) return;
+
+        try {
+          const token = localStorage.getItem("jwtToken");
+          await fetch(`http://localhost:8080/usuarios/${idUsuario}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          alert("Usuario eliminado con éxito");
+          cargarDatos();
+        } catch (error) {
+          console.error("Error al eliminar usuario:", error.message);
+        }
+      }
+
+      async function eliminarComentario(idComentario) {
+        if (!confirm("¿Estás seguro de eliminar este comentario?")) return;
+
+        try {
+          const token = localStorage.getItem("jwtToken");
+          await fetch(
+            `http://localhost:8080/recetas/comentarios/${idComentario}`,
+            {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          alert("Comentario eliminado con éxito");
+          cargarDatos();
+        } catch (error) {
+          console.error("Error al eliminar comentario:", error.message);
+        }
+      }
+
+      validarTokenYRol();
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>

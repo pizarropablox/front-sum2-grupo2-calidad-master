@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>403 - Acceso Denegado</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background-color: #f8f9fa;
+        margin: 0;
+      }
+      .error-container {
+        text-align: center;
+        color: #333;
+      }
+      .error-code {
+        font-size: 6rem;
+        font-weight: bold;
+      }
+      .error-message {
+        font-size: 1.5rem;
+      }
+      .home-button {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="error-container">
+      <div class="error-code">403</div>
+      <div class="error-message">
+        No tiene permisos para acceder a esta página.
+      </div>
+      <div class="home-button">
+        <a href="/" class="btn btn-primary">Volver a la página principal</a>
+      </div>
+    </div>
+  </body>
+</html>

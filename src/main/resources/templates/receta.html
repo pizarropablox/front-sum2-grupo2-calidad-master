@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Receta</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <!-- Detalles de la receta -->
+      <h1 id="nombreReceta">Nombre de la receta</h1>
+      <img id="imagenReceta" class="img-fluid mb-4" alt="Imagen de receta" />
+      <p>
+        <strong>Tipo de Cocina:</strong> <span id="tipoCocinaReceta"></span>
+      </p>
+      <p><strong>Dificultad:</strong> <span id="dificultadReceta"></span></p>
+      <p>
+        <strong>País de Origen:</strong> <span id="paisOrigenReceta"></span>
+      </p>
+      <p>
+        <strong>Tiempo de Cocción:</strong>
+        <span id="tiempoCoccionReceta"></span> minutos
+      </p>
+      <p><strong>Ingredientes:</strong></p>
+      <ul id="ingredientesReceta"></ul>
+      <p><strong>Instrucciones:</strong></p>
+      <p id="instruccionesReceta"></p>
+
+      <!-- Botón para abrir video -->
+      <button class="btn btn-primary" id="verVideoBtn">Ver Video</button>
+
+      <!-- Comentarios -->
+      <div class="mt-5">
+        <h3>Comentarios</h3>
+        <ul id="comentariosLista" class="list-group mb-3">
+          <!-- Los comentarios se insertan aquí -->
+        </ul>
+        <form id="comentarioForm">
+          <div class="form-group">
+            <textarea
+              id="contenidoComentario"
+              class="form-control"
+              placeholder="Escribe un comentario"
+              required
+            ></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            Agregar Comentario
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      async function validarToken() {
+        const token = localStorage.getItem("jwtToken");
+        if (!token) {
+          window.location.href = "/403";
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            "http://localhost:8080/usuarios/validar-token",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          const data = await response.json();
+          if (data.state !== "success") {
+            window.location.href = "/403";
+          } else {
+            cargarReceta();
+          }
+        } catch (error) {
+          console.error("Error al validar el token:", error.message);
+          window.location.href = "/403";
+        }
+      }
+
+      async function cargarReceta() {
+        const token = localStorage.getItem("jwtToken");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        const id = window.location.pathname.split("/").pop();
+
+        try {
+          const response = await fetch(`http://localhost:8080/recetas/${id}`, {
+            headers,
+          });
+
+          if (!response.ok) {
+            throw new Error("No se pudo cargar la receta.");
+          }
+
+          const receta = (await response.json()).res;
+
+          // Actualizar detalles de la receta
+          document.getElementById("nombreReceta").textContent = receta.nombre;
+          document.getElementById("imagenReceta").src = receta.imagenUrl;
+          document.getElementById("tipoCocinaReceta").textContent =
+            receta.tipoCocina;
+          document.getElementById("dificultadReceta").textContent =
+            receta.dificultad;
+          document.getElementById("paisOrigenReceta").textContent =
+            receta.paisOrigen;
+          document.getElementById("tiempoCoccionReceta").textContent =
+            receta.tiempoCoccion;
+          document.getElementById("instruccionesReceta").textContent =
+            receta.instrucciones;
+          receta.ingredientes.split(", ").forEach((ing) => {
+            const li = document.createElement("li");
+            li.textContent = ing;
+            document.getElementById("ingredientesReceta").appendChild(li);
+          });
+
+          // Configurar botón de video
+          document
+            .getElementById("verVideoBtn")
+            .addEventListener("click", () => {
+              window.open(receta.videoUrl, "_blank");
+            });
+
+          // Cargar comentarios
+          cargarComentarios(receta.comentarios);
+        } catch (error) {
+          console.error("Error:", error.message);
+        }
+      }
+
+      function cargarComentarios(comentarios) {
+        const comentariosLista = document.getElementById("comentariosLista");
+        comentariosLista.innerHTML = ""; // Limpiar lista existente
+        comentarios.forEach((comentario) => {
+          const li = document.createElement("li");
+          li.className = "list-group-item";
+          li.innerHTML = `(${new Date(
+            comentario.fechaComentario
+          ).toLocaleString()}): ${comentario.contenido}`;
+          comentariosLista.appendChild(li);
+        });
+      }
+
+      document
+        .getElementById("comentarioForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const id = window.location.pathname.split("/").pop();
+          const contenido = document.getElementById(
+            "contenidoComentario"
+          ).value;
+
+          try {
+            const response = await fetch(
+              `http://localhost:8080/recetas/${id}/comentarios`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+                },
+                body: JSON.stringify({ contenido }),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("No se pudo agregar el comentario.");
+            }
+
+            // Recargar lista de comentarios después de agregar uno nuevo
+            const idReceta = window.location.pathname.split("/").pop();
+            const recetaResponse = await fetch(
+              `http://localhost:8080/recetas/${idReceta}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+                },
+              }
+            );
+            const recetaActualizada = (await recetaResponse.json()).res;
+            cargarComentarios(recetaActualizada.comentarios);
+
+            document.getElementById("contenidoComentario").value = "";
+          } catch (error) {
+            console.error("Error al agregar comentario:", error.message);
+          }
+        });
+
+      validarToken();
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>
